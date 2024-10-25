@@ -1,81 +1,145 @@
+// Declare selectedMetrics and data arrays
+let selectedMetrics = [];
+let csvData = [];
+let timeData = [];
+
 // Initialize Wavesurfer.js in the #waveform container
 const wavesurfer = WaveSurfer.create({
-    container: '#waveform',  // Use the div with id 'waveform' for the waveform display
+    container: '#waveform',
     waveColor: 'violet',
     progressColor: 'purple',
     height: 80
-  });
+});
 
-  // Get modal elements for file upload
-  const modal = document.getElementById("uploadModal");
-  const uploadBtn = document.getElementById("uploadBtn");
-  const closeModalBtn = document.querySelector(".close");
-  const uploadFilesBtn = document.getElementById("uploadFilesBtn");
+// Get modal elements for file upload
+const modal = document.getElementById("uploadModal");
+const uploadBtn = document.getElementById("uploadBtn");
+const closeModalBtn = document.querySelector(".close");
+const uploadFilesBtn = document.getElementById("uploadFilesBtn");
 
-  let uploadedVideoReady = false;
-  let audioReady = false;
-  let animationReady = false;
+let uploadedVideoReady = false;
+let audioReady = false;
+let animationReady = false;
 
-  function checkAllMediaReady() {
+function checkAllMediaReady() {
     if (uploadedVideoReady && audioReady && animationReady) {
-      loadingModal.style.display = "none";  // Close the loading modal when all media are ready
+        loadingModal.style.display = "none";  // Close the loading modal when all media are ready
     }
-  }
+}
 
-  // Open the modal when upload button is clicked
-  uploadBtn.addEventListener("click", function() {
-    modal.style.display = "flex";
-  });
+// Open and close modal events
+uploadBtn.addEventListener("click", () => modal.style.display = "flex");
+closeModalBtn.addEventListener("click", () => modal.style.display = "none");
+window.addEventListener("click", event => {
+    if (event.target === modal) modal.style.display = "none";
+});
 
-  // Close the modal when 'x' is clicked
-  closeModalBtn.addEventListener("click", function() {
-    modal.style.display = "none";
-  });
+// Variables for animation frames and canvas context
+let animationFrames = [];
+let currentFrameIndex = 0;
+const animationCanvas = document.getElementById('acceleration-canvas');
+const canvasContext = animationCanvas.getContext('2d');
+animationCanvas.width = 640;
+animationCanvas.height = 480;
 
-  // Close modal if user clicks outside of it
-  window.addEventListener("click", function(event) {
-    if (event.target === modal) {
-      modal.style.display = "none";
+// Load and display a specific frame on the canvas
+function loadAndDrawFrame(frameIndex) {
+    if (frameIndex < animationFrames.length) {
+        const img = new Image();
+        img.src = animationFrames[frameIndex];
+        img.onload = () => {
+            canvasContext.clearRect(0, 0, animationCanvas.width, animationCanvas.height);
+            canvasContext.drawImage(img, 0, 0, animationCanvas.width, animationCanvas.height);
+        };
+    } else {
+        console.error("Frame index out of bounds:", frameIndex);
     }
-  });
+}
 
-  // Variables to store the animation frames and canvas context
-  let animationFrames = [];
-  let currentFrameIndex = 0;
-  let animationCanvas = document.getElementById('acceleration-canvas');
-  let canvasContext = animationCanvas.getContext('2d');
-
-  // Function to load and display a specific frame on the canvas
-  animationCanvas.width = 640; // Set this to your image's width
-  animationCanvas.height = 480; // Set this to your image's height
-
-  function loadAndDrawFrame(frameIndex) {
-      if (frameIndex < animationFrames.length) {
-          const img = new Image();
-          img.src = animationFrames[frameIndex]; // URL of the frame
-          img.onload = () => {
-              canvasContext.clearRect(0, 0, animationCanvas.width, animationCanvas.height);
-              canvasContext.drawImage(img, 0, 0, animationCanvas.width, animationCanvas.height); // Ensure proper scaling
-          };
-      } else {
-          console.error("Frame index out of bounds:", frameIndex);
-      }
-  }
-
-  function syncAnimationWithVideo(videoPlayer) {
+function syncAnimationWithVideo(videoPlayer) {
     const currentTime = videoPlayer.currentTime;
-    const frameRate = animationFrames.length / videoPlayer.duration;  // Calculate frame rate
+    const frameRate = animationFrames.length / videoPlayer.duration;
     const frameIndex = Math.floor(currentTime * frameRate);
-    
-    // Only update if frameIndex has changed and is within bounds
     if (frameIndex !== currentFrameIndex && frameIndex < animationFrames.length) {
         currentFrameIndex = frameIndex;
-        loadAndDrawFrame(frameIndex);  // Load the corresponding frame
+        loadAndDrawFrame(frameIndex);
     }
-  }
+}
 
-  // Handle file upload on button click
-  uploadFilesBtn.addEventListener("click", function(event) {
+// Parse the CSV data
+function parseCSV(csvText) {
+    const rows = csvText.split('\n').map(row => row.split(','));
+    const headers = rows[0];
+    
+    // Store time column (assumed to be in 'Millis')
+    timeData = rows.slice(1).map(row => parseFloat(row[headers.indexOf('Millis')]));
+
+    // Store selected columns for each row
+    csvData = rows.slice(1).map(row => {
+        const data = {};
+        selectedMetrics.forEach(metric => {
+            if (headers.includes(metric)) {
+                data[metric] = parseFloat(row[headers.indexOf(metric)]);
+            }
+        });
+        return data;
+    });
+}
+
+// Create real-time display elements for selected metrics
+function createRealTimeValueElements() {
+    const container = document.getElementById('selected-values');
+    container.innerHTML = ''; // Clear any previous values
+
+    selectedMetrics.forEach(metric => {
+        const metricDisplay = document.createElement('div');
+        metricDisplay.classList.add('metric-display');
+        
+        // Add a special class if the metric is "Pressure"
+        if (metric === 'Pressure') {
+            metricDisplay.classList.add('wide-label');
+        }
+
+        const labelElement = document.createElement('span');
+        labelElement.id = `label-${metric}`;
+        labelElement.innerText = `${metric}:`;
+        metricDisplay.appendChild(labelElement);
+
+        const valueElement = document.createElement('span');
+        valueElement.id = `value-${metric}`;
+        valueElement.innerText = '0.00'; // Initialize with two decimal places
+        metricDisplay.appendChild(valueElement);
+
+        container.appendChild(metricDisplay);
+    });
+}
+
+
+
+// Update real-time values based on video time
+function updateDisplayedValues(currentData) {
+    selectedMetrics.forEach(metric => {
+        const labelElement = document.getElementById(`label-${metric}`);
+        const valueElement = document.getElementById(`value-${metric}`);
+        
+        if (labelElement && valueElement) {
+            const value = currentData[metric] !== undefined ? currentData[metric] : NaN;
+            valueElement.innerText = !isNaN(value) ? value.toFixed(2) : 'N/A'; // Display two decimal places
+        }
+    });
+}
+
+
+// Sync CSV data with video time
+document.getElementById("video-player").addEventListener('timeupdate', function() {
+    const currentTimeInMillis = this.currentTime * 1000;
+    let closestIndex = timeData.findIndex(time => time >= currentTimeInMillis);
+    if (closestIndex === -1) closestIndex = timeData.length - 1;
+    updateDisplayedValues(csvData[closestIndex]);
+});
+
+// Handle file upload and initialize display elements
+uploadFilesBtn.addEventListener("click", function(event) {
     event.preventDefault();
 
     const videoFile = document.getElementById("videoFile").files[0];
@@ -83,132 +147,86 @@ const wavesurfer = WaveSurfer.create({
     const csvFile = document.getElementById("csvFile").files[0];
     const metaCsv = document.getElementById("metaCsv").files[0];
 
-    // Gather selected metrics
-    const selectedMetrics = [];
-    document.querySelectorAll('#checkbox-container input[type="checkbox"]:checked').forEach(checkbox => {
-        selectedMetrics.push(checkbox.value);
-    });
+    selectedMetrics = Array.from(document.querySelectorAll('#checkbox-container input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
 
     if (!videoFile || !audioFile || !csvFile || !metaCsv) {
-      alert("Please select all files before uploading.");
-      return;
+        alert("Please select all files before uploading.");
+        return;
     }
 
-    // Show the loading modal
+    // Show the loading modal and close the file upload modal
     loadingModal.style.display = "flex";
-
-    // Close the file upload modal
     modal.style.display = "none";
 
-    console.log("Selected metrics:", selectedMetrics);
-    console.log("Video File:", videoFile);
-    console.log("Audio File:", audioFile);
-    console.log("CSV File:", csvFile);
-
-
-    // Show the uploaded video in the video player
+    // Display the uploaded video
     const videoPlayer = document.getElementById("video-player");
     const videoURL = URL.createObjectURL(videoFile);
     videoPlayer.src = videoURL;
-    videoPlayer.load(); // Reload the video player with the new source
-
-    // Add file upload logic here (e.g., send files to server or process them)
-    videoPlayer.addEventListener('loadeddata', () => {
-        console.log("Video is ready to play.");
-    });
+    videoPlayer.load();
 
     videoPlayer.addEventListener('canplaythrough', () => {
-        console.log("Video can play through. Playing now.");
-        uploadedVideoReady = true;  // Mark uploaded video as ready
+        uploadedVideoReady = true;
         checkAllMediaReady();
     });
 
-    // Process Metadata CSV file
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const text = e.target.result;
-      parseCSV(text);
+    // Process CSV data and create real-time display elements
+    const realTimeReader = new FileReader();
+    realTimeReader.onload = function(e) {
+        parseCSV(e.target.result);
+        createRealTimeValueElements();
     };
-    reader.readAsText(metaCsv);
+    realTimeReader.readAsText(csvFile);
 
+    // Process metadata CSV file
+    const metaReader = new FileReader();
+    metaReader.onload = function(e) {
+        const rows = e.target.result.split('\n').map(row => row.split(','));
+        const headers = rows[0];
+        const animalData = rows[1];
+        document.getElementById('animal-name').innerText = animalData[headers.indexOf('Name')] || 'N/A';
+        document.getElementById('animal-breed').innerText = animalData[headers.indexOf('Breed')] || 'N/A';
+        document.getElementById('animal-age').innerText = animalData[headers.indexOf('Age')] || 'N/A';
+    };
+    metaReader.readAsText(metaCsv);
 
-    // Load the uploaded audio file into Wavesurfer.js for waveform visualization
+    // Load the uploaded audio file into Wavesurfer.js
     const audioURL = URL.createObjectURL(audioFile);
-    wavesurfer.load(audioURL); // Load the audio into Wavesurfer
-
-    wavesurfer.on('ready', function() {
-      audioReady = true;  // Mark audio as ready
-      checkAllMediaReady();
+    wavesurfer.load(audioURL);
+    wavesurfer.on('ready', () => {
+        audioReady = true;
+        checkAllMediaReady();
     });
 
-    // Synchronize the waveform with play/pause of video
-    videoPlayer.addEventListener('play', function() {
-      wavesurfer.play();
+    // Sync audio waveform with video play/pause
+    videoPlayer.addEventListener('play', () => wavesurfer.play());
+    videoPlayer.addEventListener('pause', () => wavesurfer.pause());
+    videoPlayer.addEventListener('seeked', () => {
+        wavesurfer.seekTo(videoPlayer.currentTime / videoPlayer.duration);
     });
 
-    videoPlayer.addEventListener('pause', function() {
-      wavesurfer.pause();
-    });
-
-    videoPlayer.addEventListener('seeked', function() {
-      const percentage = videoPlayer.currentTime / videoPlayer.duration;
-      wavesurfer.seekTo(percentage); // Sync waveform position with video scrubbing
-    });
-
-    //Process the animation data
+    // Send CSV file and selected metrics to the server
     const formData = new FormData();
     formData.append("csvFile", csvFile);
     formData.append("columns_to_display", JSON.stringify(selectedMetrics));
 
-    // Send CSV file to the server
     fetch("/upload", {
-      method: "POST",
-      body: formData,
+        method: "POST",
+        body: formData,
     })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        // Load the animation frames into memory
-        animationFrames = data.animationFiles;
-
-        // Add event listener to sync animation with the main video
-        videoPlayer.addEventListener('timeupdate', () => syncAnimationWithVideo(videoPlayer));
-
-        // Initial display of the first frame
-        loadAndDrawFrame(0);
-
-        console.log('Animation frames loaded:', animationFrames);
-        animationReady = true;
-        checkAllMediaReady();
-      } else {
-        alert("Failed to generate animation.");
-      }
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            animationFrames = data.animationFiles;
+            videoPlayer.addEventListener('timeupdate', () => syncAnimationWithVideo(videoPlayer));
+            loadAndDrawFrame(0);
+            animationReady = true;
+            checkAllMediaReady();
+        } else {
+            alert("Failed to generate animation.");
+        }
     })
-    .catch((error) => {
-      console.error("Error:", error);
-      loadingModal.style.display = "none";  
+    .catch(error => {
+        console.error("Error:", error);
+        loadingModal.style.display = "none";
     });
-  });
-
-  // Function to parse the CSV file and extract Name, Breed, and Age
-  function parseCSV(data) {
-    const rows = data.split('\n').map(row => row.split(','));
-    
-    // Assuming the CSV has headers like: "Name,Breed,Age" and data in the following rows
-    const headers = rows[0];
-    const nameIndex = headers.indexOf('Name');
-    const breedIndex = headers.indexOf('Breed');
-    const ageIndex = headers.indexOf('Age');
-
-    // Assuming the first row is the header and the second row contains the data
-    const animalData = rows[1];
-
-    const name = animalData[nameIndex] || "N/A";
-    const breed = animalData[breedIndex] || "N/A";
-    const age = animalData[ageIndex] || "N/A";
-
-    // Update the HTML with the extracted data
-    document.getElementById('animal-name').innerText = name;
-    document.getElementById('animal-breed').innerText = breed;
-    document.getElementById('animal-age').innerText = age;
-  }
+});
