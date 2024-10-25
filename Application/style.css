@@ -1,129 +1,198 @@
+/* General Styles */
 body {
     font-family: Arial, sans-serif;
-    padding: 0; /* Remove padding from the body */
-    margin: 0; /* Reset margin */
-  }
+    padding: 0;
+    margin: 0;
+}
 
-  /* Container for video and info */
-  #video-info-container {
+/* Container for video and info */
+#video-info-container {
     display: flex;
     flex-direction: column;
     width: 60%;
-  }
+}
 
-  /* Horizontal alignment of Name, Breed, and Age with padding */
-  #info-container {
+/* Horizontal alignment of Name, Breed, and Age with padding */
+#info-container {
     display: flex;
     justify-content: space-between;
-    padding: 10px 20px;  /* Add padding around the edges */
+    padding: 10px 20px;
     border-top: 1px solid #ccc;
     margin-top: 10px;
-  }
+}
 
-  #info-container p {
-    margin: 0 10px;  /* Add space between each field */
-  }
-  
-  /* Main container for both video-info and graph containers */
-  #container {
+#info-container p {
+    margin: 0 10px;
+}
+
+/* Main containers */
+#container {
     display: flex;
     gap: 20px;
-  }
+}
 
-  #video-container {
+#video-container {
     width: 100%;
-  }
+}
 
-  #main-container {
-    display: flex;  /* Use flexbox to arrange children side by side */
-    width: 100%; /* Ensure full width */
-    height: 100vh; /* Full height of the viewport */
-  }
+#main-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}
 
-  /* Left Section (60% width) */
-  #left-section {
-    width: 60%; /* 60% of the width */
-    padding: 20px; /* Optional: Add padding */
-    box-sizing: border-box; /* Include padding in width */
-  }
+/* Left Section (50% width) */
+#left-section {
+    width: 50%;
+    padding: 20px;
+    box-sizing: border-box;
+}
 
-  /* Right Section (40% width) */
-  #graph-container {
-    width: 40%; /* 40% of the width */
+/* Right Section (50% width) */
+#graph-container {
+    width: 50%;
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Gap between graph items */
-    padding: 20px; /* Optional: Add padding */
-    box-sizing: border-box; /* Include padding in width */
-  }
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+}
 
-  .graph {
+.graph {
     border: 1px solid #ccc;
     padding: 10px;
     height: 100px;
     position: relative;
-  }
+}
 
-  /* Container for Acceleration Data Animation */
-  #acceleration-graph {
-    height: 450px; /* Make the box taller */
-    display: flex; /* Use flexbox to arrange items */
-    flex-direction: column; /* Stack items vertically */
-    justify-content: flex-start; /* Align items to the top */
-  }
-
-  #acceleration-canvas {
-    width: 100%;
-    height: 100%; /* Keep the video height fixed */
-    box-sizing: border-box;
-  }
-
-  /* Container for Audio Waveform Player */
-  #audio-graph {
-    height: 150px; /* Make the box shorter */
-  }
-
-  #waveform {
-    height: 80px; /* Keep the waveform height fixed */
-  }
-
-  #checkbox-container {
-    display: grid;
-    grid-template-columns: repeat(3, auto); /* 3 items per row */
-    gap: 5px 5px; /* Adjust vertical and horizontal spacing */
-  }
-
-  #checkbox-container label {
+/* Acceleration Data Animation Container */
+#acceleration-graph {
+    height: 450px;
     display: flex;
-    align-items: center; /* Align checkbox and label text */
-    gap: 4px; /* Space between checkbox and label */
-  }
+    flex-direction: column;
+    position: relative;
+    box-sizing: border-box;
+    gap: 5px;
+    padding: 10px;
+}
 
-  /* Adjust Pressure to be on a new row with alignment */
-  #metric-Pressure {
-    grid-column: 1 / span 3; /* Make Pressure span the entire row */
-    margin-top: 5px; /* Adjust vertical spacing for Pressure */
-  }
+#acceleration-graph h3 {
+    margin: 0;
+    font-size: 1.1em;
+    align-self: flex-start;
+    height: 30px;
+}
 
-  #metrics-container {
-    margin-bottom: 20px; /* Add a gap before the next section */
-  }
+/* Canvas inside acceleration graph */
+#acceleration-canvas {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: calc(100% - 70px);
+    object-fit: contain;
+    box-sizing: border-box;
+    flex-shrink: 1;
+}
 
+/* Selected Values Display */
+#selected-values {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    border-top: 1px solid #ccc;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+}
 
-  .time-marker {
+.metric-display {
+    display: flex;
+    gap: 5px;
+    width: 80px;
+    justify-content: space-between;
+}
+
+.metric-display span {
+    font-family: monospace;
+}
+
+#selected-values .metric-display span:nth-child(1) {
+    text-align: left;
+    width: 40px;
+}
+
+#selected-values .metric-display span:nth-child(2) {
+    text-align: right;
+    width: 40px;
+}
+
+/* Specific styling for "Pressure" metric to increase space */
+.metric-display.wide-label {
+    width: 120px;
+}
+
+.metric-display.wide-label span:nth-child(1) {
+    width: 60px;
+}
+
+.metric-display.wide-label span:nth-child(2) {
+    width: 60px;
+}
+
+/* Audio Waveform Player Container */
+#audio-graph {
+    height: 150px;
+}
+
+#audio-graph h3 {
+    margin-top: 5px;
+    padding-bottom: 5px;
+    align-self: flex-start;
+    font-size: 1.1em;
+}
+
+#waveform {
+    height: 90px;
+}
+
+/* Checkbox Container */
+#checkbox-container {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 5px;
+}
+
+#checkbox-container label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Adjust Pressure to span full width in the grid */
+#metric-Pressure {
+    grid-column: 1 / span 3;
+    margin-top: 5px;
+}
+
+/* Container for metrics section */
+#metrics-container {
+    margin-bottom: 20px;
+}
+
+/* Time Marker */
+.time-marker {
     position: absolute;
     top: 0;
     left: 0;
     height: 100%;
     width: 2px;
     background-color: red;
-  }
+}
 
-  .metric-value {
+.metric-value {
     font-weight: bold;
-  }
+}
 
-  .modal {
+/* Modal Styles */
+.modal {
     display: none;
     position: fixed;
     top: 0;
@@ -134,28 +203,29 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-  }
+}
 
-  .modal-content {
+.modal-content {
     background-color: white;
     padding: 20px;
     border-radius: 5px;
     width: 400px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     z-index: 1001;
-  }
+}
 
-  .modal-header {
+.modal-header {
     font-size: 18px;
     margin-bottom: 15px;
-  }
+}
 
-  .modal-footer {
+.modal-footer {
     text-align: right;
     margin-top: 15px;
-  }
+}
 
-  .loading-animation {
+/* Loading Animation */
+.loading-animation {
     border: 6px solid #f3f3f3;
     border-radius: 50%;
     border-top: 6px solid #3498db;
@@ -163,32 +233,35 @@ body {
     height: 40px;
     animation: spin 1s linear infinite;
     margin: 20px auto;
-  }
+}
 
-  @keyframes spin {
+@keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-  }
+}
 
-  .close {
+/* Close Button */
+.close {
     float: right;
     font-size: 24px;
     cursor: pointer;
-  }
+}
 
-  input[type="file"] {
+/* File Input */
+input[type="file"] {
     display: block;
     margin-bottom: 15px;
-  }
+}
 
-  button {
+/* Button Styles */
+button {
     padding: 10px 15px;
     background-color: #4CAF50;
     color: white;
     border: none;
     cursor: pointer;
-  }
+}
 
-  button:hover {
+button:hover {
     background-color: #45a049;
-  }
+}
